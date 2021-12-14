@@ -9,4 +9,6 @@ class Reader(filename: String) {
 
     fun forEachLine(foo: (input: String) -> Unit) =
         bufferedReader.forEachLine {foo(it)}
+
+    fun readAll(): String = bufferedReader.readText().replace("\r", "")
 }
