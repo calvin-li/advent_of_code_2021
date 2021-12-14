@@ -7,9 +7,9 @@ val input = Reader(if (System.getenv("TEST") == "True") testFile else filename)
 fun main(args: Array<String>) {
     val SPAWN = 7
     val DELAY = 2
-    val DAYS = 80
+    val DAYS = 256
 
-    val fish = Array(DAYS){ IntArray(SPAWN+DELAY) }
+    val fish = Array(DAYS){ LongArray(SPAWN+DELAY) }
     fish[0][0] = 2
     for(i in 1 until fish[0].count()){ fish[0][i] = 1}
 
@@ -21,7 +21,7 @@ fun main(args: Array<String>) {
         }
     }
 
-    var total = 0
+    var total: Long = 0
     input.readLine().split(',').forEach {
         total += fish.last()[it.toInt()]
     }
