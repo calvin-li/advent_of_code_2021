@@ -1,3 +1,5 @@
+import kotlin.math.abs
+
 const val filename = "input.txt"
 const val testFile = "test.txt"
 
@@ -5,26 +7,18 @@ val input = Reader(if (System.getenv("TEST") == "True") testFile else filename)
 
 @Suppress("UNUSED_PARAMETER")
 fun main(args: Array<String>) {
-    val SPAWN = 7
-    val DELAY = 2
-    val DAYS = 256
+    val crabs = input.readLine().split(',').map { it.toInt() }
+    val max = crabs.maxOf { it }
+    val crabCount = IntArray(max+1)
+    val fuel = IntArray(max+1)
 
-    val fish = Array(DAYS){ LongArray(SPAWN+DELAY) }
-    fish[0][0] = 2
-    for(i in 1 until fish[0].count()){ fish[0][i] = 1}
+    crabs.forEach { crabCount[it]++ }
 
-    for(i in 1 until fish.count()){
-        val prev = fish[i - 1]
-        fish[i][0] = prev[6] + prev[8]
-        for(j in 1 until prev.count()){
-            fish[i][j] = prev[j-1]
+    for(i in 0..max){
+        crabCount.forEachIndexed { index, c ->
+            val f = abs(index - i)
+            fuel[i] += c * f*(f+1)/2
         }
     }
-
-    var total: Long = 0
-    input.readLine().split(',').forEach {
-        total += fish.last()[it.toInt()]
-    }
-
-    println(total)
+    println(fuel.minOf{it})
 }
