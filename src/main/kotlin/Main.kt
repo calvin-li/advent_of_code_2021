@@ -4,29 +4,35 @@ val input = Reader(if (System.getenv("TEST") == "True") testFile else filename)
 
 @Suppress("UNUSED_PARAMETER")
 fun main(args: Array<String>) {
-    val min = mutableListOf<Pair<Int, Int>>()
-    val cave = CaveMap(input.readLines())
-    for(i in 0 until cave.width){
-        for(j in 0 until cave.length){
-            val curPair = Pair(i, j)
-            val height = cave.getHeight(curPair)
-            val surround = cave.getSurround(j, i).map { p ->
-                cave.heights[p.second][p.first]
+    val openers = listOf('(', '[', '{', '<')
+    val closers = listOf(')', ']', '}', '>')
+    val scores = mutableListOf<Long>()
+    val incomplete = mutableListOf<CharArray>()
+
+    input.forEachLine {
+        val stack = mutableListOf<Char>()
+        it.forEach { ch ->
+            if(openers.contains(ch)){
+                stack.add(0, ch)
             }
-            if(surround.all { s -> s > height }){
-                min.add(curPair)
+            else{
+                if(closers.indexOf(ch) == openers.indexOf(stack[0])){
+                    stack.removeAt(0)
+                }
+                else{
+                    return@forEachLine
+                }
             }
         }
+        incomplete.add(stack.toCharArray())
     }
 
-    val basins = min.map { cave.getBasins(it) }
-    val sizes = basins.map {
-        it.sumOf { i ->
-            i.sumOf { j ->
-                val ans: Int = if(j){1}else{0}
-                ans
-            }
-        }
+    incomplete.forEach {
+        scores.add(it.fold(0){total: Long, ch ->
+            val index = openers.indexOf(ch)
+            val score: Long = index.toLong()+1
+            total*5 + score
+        })
     }
-    println(sizes.sorted().takeLast(3).reduce { acc, i -> acc*i })
+    println(scores.sorted()[scores.size/2])
 }
