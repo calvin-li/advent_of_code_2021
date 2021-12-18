@@ -18,5 +18,22 @@ class CaveMap (input: List<String>) {
         }
         return coords
     }
-    fun getVal(p: Pair<Int, Int>) = heights[p.second][p.first]
+    fun getHeight(p: Pair<Int, Int>) = heights[p.second][p.first]
+    fun getBasins(min: Pair<Int, Int>): Array<BooleanArray> {
+        val basin = Array(length){ BooleanArray(width) }
+        val q = mutableListOf(min)
+        while (q.isNotEmpty()){
+            val cur = q.removeAt(0)
+            basin[cur.second][cur.first] = true
+            val surr = getSurround(cur).filter {
+                !basin[it.second][it.first] && getHeight(it) != 9
+            }
+            q.addAll(surr)
+        }
+        return basin
+    }
+
+    fun getHeight(x: Int, y: Int) = getHeight(Pair(x,y))
+    private fun getSurround(p: Pair<Int, Int>): List<Pair<Int, Int>> =
+        getSurround(p.second, p.first)
 }
