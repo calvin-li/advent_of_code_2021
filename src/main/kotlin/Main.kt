@@ -11,13 +11,16 @@ fun main(args: Array<String>) {
     }.toTypedArray()
     val grid = Grid(arr)
 
-    var flashes = 0
     val willFlash = mutableListOf<Pair<Int,Int>>()
 
-    val numSteps = 100
-    (1..numSteps).forEach { _ -> flashes += step(grid, willFlash) }
-
-    println(flashes)
+    var stepNum = 1
+    while(true) {
+        if(step(grid, willFlash) == 100){
+            println(stepNum)
+            return
+        }
+        stepNum++
+    }
 }
 
 private fun step(
