@@ -4,6 +4,47 @@ val input = Reader(if (System.getenv("TEST") == "True") testFile else filename)
 
 @Suppress("UNUSED_PARAMETER")
 fun main(args: Array<String>) {
-    val grid = Grid(input.readLines())
-    val n = grid[1][2]
+    val arr = input.readLines().map { i ->
+        i.map { j ->
+            j.code - '0'.code
+        }.toTypedArray()
+    }.toTypedArray()
+    val grid = Grid(arr)
+
+    var flashes = 0
+    val willFlash = mutableListOf<Pair<Int,Int>>()
+
+    val numSteps = 100
+    (1..numSteps).forEach { _ -> flashes += step(grid, willFlash) }
+
+    println(flashes)
+}
+
+private fun step(
+    grid: Grid<Int>,
+    willFlash: MutableList<Pair<Int, Int>>,
+): Int {
+    var flashes = 0
+    while (willFlash.isNotEmpty()) {
+        val box = grid.getBox(willFlash.removeAt(0))
+        box.forEach { p ->
+            grid[p.first][p.second] += 1
+            if (grid[p.first][p.second] == 9) {
+                willFlash.add(p)
+            }
+        }
+    }
+    grid.forEachCell { x, y ->
+        if(grid[x][y] >= 9){
+            grid[x][y] = 0
+            flashes++
+        }
+        else {
+            grid[x][y] += 1
+            if (grid[x][y] == 9) {
+                willFlash.add(Pair(x, y))
+            }
+        }
+    }
+    return flashes
 }
