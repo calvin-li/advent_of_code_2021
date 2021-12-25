@@ -41,14 +41,19 @@ fun explore(
     val edges = graph[current]!!
     if(current == "END"){
         paths.add(curPath)
-        println(curPath)
         return
     }
     val unexplored = edges.filter{
-        it.all{i -> i.isUpperCase()} || !curPath.contains(it)
+        bigCave(it) || !curPath.contains(it) || !visitedSmallCave(curPath) && it != "start"
     }
     unexplored.forEach {
         explore(it, graph, curPath.plus(it), paths)
     }
 }
+
+fun visitedSmallCave(curPath: List<String>): Boolean {
+    return curPath.filter { !bigCave(it) }.groupingBy { it }.eachCount().any { it.value == 2 }
+}
+
+private fun bigCave(cave: String) = cave.all { i -> i.isUpperCase() }
 
