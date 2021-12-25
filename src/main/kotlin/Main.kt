@@ -3,51 +3,52 @@ const val testFile = "test.txt"
 val input = Reader(if (System.getenv("TEST") == "True") testFile else filename)
 
 @Suppress("UNUSED_PARAMETER")
-fun main(args: Array<String>) {
-    val arr = input.readLines().map { i ->
-        i.map { j ->
-            j.code - '0'.code
-        }.toTypedArray()
-    }.toTypedArray()
-    val grid = Grid(arr)
+fun main(args: Array<String>){
+    val lines = input.readLines().map {
+        it.replace("end", "END")
+    }
+    val nodes = lines.map { i ->
+        i.split('-')
+    }.fold(setOf()){ acc: Set<String>, j: List<String> ->
+        acc + j
+    }
 
-    val willFlash = mutableListOf<Pair<Int,Int>>()
+    val edgeMap = nodes.associateWith<String, MutableSet<String>> {
+        mutableSetOf()
+    }
+    lines.forEach {
+        val split = it.split('-')
+        edgeMap[split[0]]!!.add(split[1])
+        edgeMap[split[1]]!!.add(split[0])
+    }
+    val graph = edgeMap.keys.associateWith {
+        edgeMap[it]!!.toSet()
+    }
+    val paths = mutableListOf<List<String>>()
+    graph["start"]!!
 
-    var stepNum = 1
-    while(true) {
-        if(step(grid, willFlash) == 100){
-            println(stepNum)
-            return
-        }
-        stepNum++
+    explore("start", graph, listOf("start"), paths)
+
+    println(paths.size)
+}
+
+fun explore(
+    current: String,
+    graph: Map<String, Set<String>>,
+    curPath: List<String>,
+    paths: MutableList<List<String>>)
+{
+    val edges = graph[current]!!
+    if(current == "END"){
+        paths.add(curPath)
+        println(curPath)
+        return
+    }
+    val unexplored = edges.filter{
+        it.all{i -> i.isUpperCase()} || !curPath.contains(it)
+    }
+    unexplored.forEach {
+        explore(it, graph, curPath.plus(it), paths)
     }
 }
 
-private fun step(
-    grid: Grid<Int>,
-    willFlash: MutableList<Pair<Int, Int>>,
-): Int {
-    var flashes = 0
-    while (willFlash.isNotEmpty()) {
-        val box = grid.getBox(willFlash.removeAt(0))
-        box.forEach { p ->
-            grid[p.first][p.second] += 1
-            if (grid[p.first][p.second] == 9) {
-                willFlash.add(p)
-            }
-        }
-    }
-    grid.forEachCell { x, y ->
-        if(grid[x][y] >= 9){
-            grid[x][y] = 0
-            flashes++
-        }
-        else {
-            grid[x][y] += 1
-            if (grid[x][y] == 9) {
-                willFlash.add(Pair(x, y))
-            }
-        }
-    }
-    return flashes
-}
