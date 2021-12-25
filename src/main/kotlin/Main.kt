@@ -3,57 +3,48 @@ const val testFile = "test.txt"
 val input = Reader(if (System.getenv("TEST") == "True") testFile else filename)
 
 @Suppress("UNUSED_PARAMETER")
-fun main(args: Array<String>){
-    val lines = input.readLines().map {
-        it.replace("end", "END")
-    }
-    val nodes = lines.map { i ->
-        i.split('-')
-    }.fold(setOf()){ acc: Set<String>, j: List<String> ->
-        acc + j
+fun main(args: Array<String>) {
+    val text = input.readAll()
+    var dots = text.split("\n\n")[0].split('\n').map {
+        it.split(',').map { s -> s.toInt() }
+    }.map{ Pair(it[0], it[1])}.toSet()
+    val folds = text.split("\n\n")[1].split('\n').map {
+        it.split(' ').last().split('=')
+    }.map{ Pair(it[0], it[1])}
+
+    folds.forEach {
+        dots = fold(dots, it)
     }
 
-    val edgeMap = nodes.associateWith<String, MutableSet<String>> {
-        mutableSetOf()
-    }
-    lines.forEach {
-        val split = it.split('-')
-        edgeMap[split[0]]!!.add(split[1])
-        edgeMap[split[1]]!!.add(split[0])
-    }
-    val graph = edgeMap.keys.associateWith {
-        edgeMap[it]!!.toSet()
-    }
-    val paths = mutableListOf<List<String>>()
-    graph["start"]!!
+    val width = dots.maxOf { it.first }+1
+    val height = dots.maxOf { it.second }+1
 
-    explore("start", graph, listOf("start"), paths)
+    val cells = Array(height){CharArray(width){'.'} }
+    dots.forEach { cells[it.second][it.first] = '#' }
 
-    println(paths.size)
-}
-
-fun explore(
-    current: String,
-    graph: Map<String, Set<String>>,
-    curPath: List<String>,
-    paths: MutableList<List<String>>)
-{
-    val edges = graph[current]!!
-    if(current == "END"){
-        paths.add(curPath)
-        return
-    }
-    val unexplored = edges.filter{
-        bigCave(it) || !curPath.contains(it) || !visitedSmallCave(curPath) && it != "start"
-    }
-    unexplored.forEach {
-        explore(it, graph, curPath.plus(it), paths)
+    cells.forEach {
+        it.forEach { i ->
+            (1..3).forEach { _ -> print(i) }
+        }
+        println()
     }
 }
 
-fun visitedSmallCave(curPath: List<String>): Boolean {
-    return curPath.filter { !bigCave(it) }.groupingBy { it }.eachCount().any { it.value == 2 }
+fun fold(dots: Set<Pair<Int, Int>>, fold: Pair<String, String>):
+        Set<Pair<Int, Int>> {
+    val horizontal = fold.first == "x"
+    val line = fold.second.toInt()
+
+    return dots.map { foldOne(it, horizontal, line) }.toSet()
 }
 
-private fun bigCave(cave: String) = cave.all { i -> i.isUpperCase() }
+fun foldOne(dot: Pair<Int, Int>, horizontal: Boolean, line: Int): Pair<Int, Int> {
+    return if(horizontal){
+        val diff = kotlin.math.max(dot.first-line, 0)
+        Pair(dot.first-2*diff, dot.second)
+    } else{
+        val diff = kotlin.math.max(dot.second-line, 0)
+        Pair(dot.first, dot.second-2*diff)
+    }
 
+}
