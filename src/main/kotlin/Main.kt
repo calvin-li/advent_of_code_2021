@@ -4,47 +4,41 @@ val input = Reader(if (System.getenv("TEST") == "True") testFile else filename)
 
 @Suppress("UNUSED_PARAMETER")
 fun main(args: Array<String>) {
-    val text = input.readAll()
-    var dots = text.split("\n\n")[0].split('\n').map {
-        it.split(',').map { s -> s.toInt() }
-    }.map{ Pair(it[0], it[1])}.toSet()
-    val folds = text.split("\n\n")[1].split('\n').map {
-        it.split(' ').last().split('=')
-    }.map{ Pair(it[0], it[1])}
-
-    folds.forEach {
-        dots = fold(dots, it)
+    val template = input.readLine()
+    input.readLine()
+    val rules = input.readLines().associate {
+        it.split(" -> ").let { (pair, rule) -> pair to rule}
     }
-
-    val width = dots.maxOf { it.first }+1
-    val height = dots.maxOf { it.second }+1
-
-    val cells = Array(height){CharArray(width){'.'} }
-    dots.forEach { cells[it.second][it.first] = '#' }
-
-    cells.forEach {
-        it.forEach { i ->
-            (1..3).forEach { _ -> print(i) }
+    val endLetters = "${template.first()}${template.last()}"
+    var pairCount: Map<String, Long> = template.dropLast(1).zip(template.drop(1)).map {
+        "${it.first}${it.second}"
+    }.groupingBy { it }.eachCount().toList().associate{ it.first to it.second.toLong() }
+    val steps = 40
+    (1..steps).forEach { _ ->
+        pairCount = step(pairCount, rules)
+    }
+    val letterCount = mutableMapOf<Char, Long>()
+    pairCount.forEach { (t, u) ->
+        t.forEach { c ->
+            letterCount[c] = (letterCount[c] ?: 0) + u
         }
-        println()
     }
+    endLetters.forEach { letterCount[it] = letterCount[it]!! + 1 }
+    letterCount.forEach { (t, _) -> letterCount[t] = letterCount[t]!!/2 }
+
+    print(letterCount.values.maxOf { it } - letterCount.values.minOf { it })
 }
 
-fun fold(dots: Set<Pair<Int, Int>>, fold: Pair<String, String>):
-        Set<Pair<Int, Int>> {
-    val horizontal = fold.first == "x"
-    val line = fold.second.toInt()
-
-    return dots.map { foldOne(it, horizontal, line) }.toSet()
-}
-
-fun foldOne(dot: Pair<Int, Int>, horizontal: Boolean, line: Int): Pair<Int, Int> {
-    return if(horizontal){
-        val diff = kotlin.math.max(dot.first-line, 0)
-        Pair(dot.first-2*diff, dot.second)
-    } else{
-        val diff = kotlin.math.max(dot.second-line, 0)
-        Pair(dot.first, dot.second-2*diff)
+fun step(pairCount: Map<String, Long>, rules: Map<String, String>): Map<String, Long> {
+    val newPairCount = mutableMapOf<String, Long>()
+    pairCount.keys.forEach { pair ->
+        if(rules[pair] != null){
+            val newLetter = rules[pair]
+            val count = pairCount[pair]!!
+            listOf("${pair[0]}$newLetter", "$newLetter${pair[1]}").forEach { i ->
+                newPairCount[i] = (newPairCount[i] ?: 0) + count
+            }
+        }
     }
-
+    return newPairCount
 }
