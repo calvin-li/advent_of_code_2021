@@ -1,44 +1,37 @@
+import kotlin.math.min
+
 const val filename = "input.txt"
 const val testFile = "test.txt"
 val input = Reader(if (System.getenv("TEST") == "True") testFile else filename)
 
 @Suppress("UNUSED_PARAMETER")
 fun main(args: Array<String>) {
-    val template = input.readLine()
-    input.readLine()
-    val rules = input.readLines().associate {
-        it.split(" -> ").let { (pair, rule) -> pair to rule}
-    }
-    val endLetters = "${template.first()}${template.last()}"
-    var pairCount: Map<String, Long> = template.dropLast(1).zip(template.drop(1)).map {
-        "${it.first}${it.second}"
-    }.groupingBy { it }.eachCount().toList().associate{ it.first to it.second.toLong() }
-    val steps = 40
-    (1..steps).forEach { _ ->
-        pairCount = step(pairCount, rules)
-    }
-    val letterCount = mutableMapOf<Char, Long>()
-    pairCount.forEach { (t, u) ->
-        t.forEach { c ->
-            letterCount[c] = (letterCount[c] ?: 0) + u
-        }
-    }
-    endLetters.forEach { letterCount[it] = letterCount[it]!! + 1 }
-    letterCount.forEach { (t, _) -> letterCount[t] = letterCount[t]!!/2 }
+    val risk = Grid(input.readLines().map {
+        it.toCharArray().map {
+            c -> c.code - '0'.code }.toTypedArray()
+    }.toTypedArray())
+    val size = risk[0].size
+    val visited = Grid(Array(size){ Array(size){false} })
+    val cost = Grid(Array(size){ Array(size){Int.MAX_VALUE} })
+    cost[0][0] = 0
 
-    print(letterCount.values.maxOf { it } - letterCount.values.minOf { it })
-}
+    val riskPretty = risk.prettyPrint()
+    var visitedPretty = visited.prettyPrint()
+    var costPretty = cost.prettyPrint()
 
-fun step(pairCount: Map<String, Long>, rules: Map<String, String>): Map<String, Long> {
-    val newPairCount = mutableMapOf<String, Long>()
-    pairCount.keys.forEach { pair ->
-        if(rules[pair] != null){
-            val newLetter = rules[pair]
-            val count = pairCount[pair]!!
-            listOf("${pair[0]}$newLetter", "$newLetter${pair[1]}").forEach { i ->
-                newPairCount[i] = (newPairCount[i] ?: 0) + count
-            }
+    while(!visited[size-1][size-1]){
+        val nonVisited = visited.filterCellIndex { x, y -> !visited[x][y] }
+        val minCostIndex = nonVisited.minByOrNull { cost[it] }!!
+        val minCost = cost[minCostIndex]
+        val plus = risk.getPlus(minCostIndex)
+
+        plus.forEach {
+            val newCost = minCost + risk[it]
+            cost[it] = min(newCost, cost[it])
         }
+        visited[minCostIndex] = true
+        visitedPretty = visited.prettyPrint()
+        costPretty = cost.prettyPrint()
     }
-    return newPairCount
+    println(cost[size-1][size-1])
 }
